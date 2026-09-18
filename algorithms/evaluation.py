@@ -39,4 +39,24 @@ def evaluation_function(state: GameState) -> float:
         return base_evaluation_function(state)
 
     # TODO: Add your code here
-    return base_evaluation_function(state)
+    pos_defensor = state.defender_position
+    pos_intruso = state.intruder_position
+    terminales = state.pending_terminals
+    puntaje_base = state.get_score()
+    
+    min_dist_terminal = float("inf")
+    for terminal in terminales:
+      distancia = state.layout.distance(pos_defensor, terminal)
+      if distancia < min_dist_terminal:
+        min_dist_terminal = distancia
+    dist_intruso = state.layout.distance(pos_defensor, pos_intruso)
+    
+    atraccion = 0
+    if min_dist_terminal != float("inf"):
+      atraccion = 10 / (min_dist_terminal + 1)
+    repulsion = 0
+    if dist_intruso <= 2:
+      repulsion = 50 / (dist_intruso + 1)
+      
+    valor_heuristica = puntaje_base + atraccion - repulsion
+    return max(-999, min(999, valor_heuristica))
