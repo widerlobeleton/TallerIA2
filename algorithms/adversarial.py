@@ -41,8 +41,37 @@ class MinimaxAgent(MultiAgentSearchAgent):
           la raíz. Retorne la acción de MAX y conserve la primera en los empates.
         """
         # TODO: Add your code here
-        raise NotImplementedError("Punto 4: implemente MinimaxAgent.get_action")
-
+        self.nodes_evaluated = 0
+        self.nodes_evaluated += 1
+        mejor_accion = None
+        mejor_valor = float("-inf")
+        for accion in state.get_legal_actions(0):
+          sucesor = state.generate_successor(0, accion)
+          valor = self.minimax_value(sucesor, self.depth - 1, 1)
+          if valor > mejor_valor:
+            mejor_valor = valor
+            mejor_accion = accion
+        return mejor_accion
+    def minimax_value(self, estado, profundidad, agente):
+      self.nodes_evaluated += 1
+      if estado.is_win() or estado.is_lose() or profundidad == 0:
+        return evaluation_function(estado)            
+      acciones = estado.get_legal_actions(agente)
+      if not acciones:
+        return evaluation_function(estado)
+      siguiente_agente = (agente + 1) % estado.get_num_agents()
+      if agente == 0:
+        v = float("-inf")
+        for accion in acciones:
+          sucesor = estado.generate_successor(agente, accion)
+          v = max(v, self.minimax_value(sucesor, profundidad -1, siguiente_agente))  
+        return v
+      else:
+        v = float("inf")
+        for accion in acciones:
+          sucesor = estado.generate_successor(agente, accion)
+          v = min(v, self.minimax_value(sucesor, profundidad -1, siguiente_agente))
+        return v
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """Agente Minimax que evita explorar ramas mediante poda alfa-beta."""
@@ -62,4 +91,43 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           y corte si valor <= alpha.
         """
         # TODO: Add your code here
-        raise NotImplementedError("Punto 5: implemente AlphaBetaAgent.get_action")
+        self.nodes_evaluated = 0
+        self.nodes_evaluated += 1
+        mejor_accion = None
+        mejor_valor = float("-inf")
+        alfa = float("-inf")
+        beta = float("inf")
+        for accion in state.get_legal_actions(0):
+          sucesor = state.generate_successor(0, accion)
+          valor = self.alphabeta_value(sucesor, self.depth - 1, 1, alfa, beta)
+          if valor > mejor_valor:
+            mejor_valor = valor
+            mejor_accion = accion
+          alfa = max(alfa, mejor_valor)
+        return mejor_accion
+    def alphabeta_value(self, estado, profundidad, agente, alfa, beta):
+      self.nodes_evaluated += 1
+      if estado.is_win() or estado.is_lose() or profundidad == 0:
+        return evaluation_function(estado)
+      acciones = estado.get_legal_actions(agente)
+      if not acciones:
+        return evaluation_function(estado)
+      siguiente_agente = (agente + 1) % estado.get_num_agents()
+      if agente == 0:
+        v = float("-inf")
+        for accion in acciones:
+          sucesor = estado.generate_successor(agente, accion)
+          v = max(v, self.alphabeta_value(sucesor, profundidad -1, siguiente_agente, alfa, beta))
+          if v >= beta:
+            return v
+          alfa = max(alfa, v)
+        return v
+      else:
+        v = float("inf")
+        for accion in acciones:
+          sucesor = estado.generate_successor(agente, accion)
+          v = min(v, self.alphabeta_value(sucesor, profundidad -1, siguiente_agente, alfa, beta))
+          if v <= alfa:
+            return v
+          beta = min(beta, v)
+        return v
