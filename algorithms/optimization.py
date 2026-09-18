@@ -186,7 +186,11 @@ def one_point_crossover(
         return parent1, parent2
 
     # TODO: Add your code here
-    raise NotImplementedError("Punto 3: implemente one_point_crossover")
+    cut_point = rng.randint(1, len(parent1) -1)
+    child1 = parent1[:cut_point] + parent2[cut_point:]
+    child2 = parent2[:cut_point] + parent1[cut_point:]
+    tupla = child1, child2
+    return tupla
 
 
 def swap_mutation(
@@ -206,8 +210,29 @@ def swap_mutation(
     - Retorne una tupla nueva; no modifique el individuo recibido.
     """
     # TODO: Add your code here
-    raise NotImplementedError("Punto 3: implemente swap_mutation")
-
+    mutation_prob = rng.random()
+    if mutation_prob < mutation_probability:
+        cut = rng.randint(0, len(individual) -1)
+        lista0 = []
+        lista1 = []
+        i = 0
+        for ADN in individual:
+            if ADN == 0:
+                lista0.append(i)
+            else:
+                lista1.append(i)
+            i += 1
+        if lista1 == [] or lista0 == []:
+            return individual
+        rng1 = rng.choice(lista0)
+        rng2 = rng.choice(lista1)
+        rng1_copy = rng1
+        temp = list(individual)
+        temp[rng1] = individual[rng2]
+        temp[rng2] = individual[rng1_copy]
+        return tuple(temp)
+    return individual
+            
 
 def genetic_algorithm(
     problem: SmartGridOptimizationProblem,
@@ -243,4 +268,32 @@ def genetic_algorithm(
         raise ValueError("elite_size debe estar entre 0 y population_size")
 
     # TODO: Add your code here
-    raise NotImplementedError("Punto 3: implemente genetic_algorithm")
+    mejor_de_todos = None
+    mejor_puntaje = float("-inf")
+    historial_mejores = []
+    population = problem.initial_population(population_size, rng)
+    while generations > 0:
+        generations -= 1
+        population.sort(key = lambda ind: configuration_score(problem, ind), reverse = True)
+        mejor_local = population[0]
+        mejor_puntaje_local = configuration_score(problem, mejor_local)
+        if mejor_de_todos is None or mejor_puntaje < mejor_puntaje_local:
+            mejor_de_todos = mejor_local
+            mejor_puntaje = mejor_puntaje_local
+        historial_mejores.append(mejor_puntaje)
+        nueva_poblacion = population[:elite_size]
+        while len(nueva_poblacion) < population_size:
+            parent1 = problem.tournament_select(population, rng)
+            parent2 = problem.tournament_select(population, rng)
+            child1, child2 = one_point_crossover(parent1, parent2, rng)
+            child1 = problem.repair_configuration(child1, rng)
+            child2 = problem.repair_configuration(child2, rng)
+            child1 = swap_mutation(child1, mutation_probability, rng)
+            child2 = swap_mutation(child2, mutation_probability, rng)
+            nueva_poblacion.append(child1)
+            if len(nueva_poblacion) < population_size:
+                nueva_poblacion.append(child2)
+        population = nueva_poblacion
+
+            
+    return OptimizationResult(configuration = mejor_de_todos, score = mejor_puntaje, evaluation = len(historial_mejores), iterations = len(historial_mejores), history = historial_mejores)
